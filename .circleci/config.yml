@@ -1,0 +1,16 @@
+version: 2.1
+
+jobs:
+  run-hello-world:
+    machine:
+      image: ubuntu-1604:201903-01
+    steps:
+      - checkout
+      - run: git clone https://github.com/actions/hello-world-docker-action
+      - run: docker build -t step-image hello-world-docker-action
+      - run: docker run step-image Alex
+
+workflows:
+  test:
+    jobs:
+      - run-hello-world

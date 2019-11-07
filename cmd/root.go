@@ -37,9 +37,9 @@ var rootCmd = &cobra.Command{
 	Long:  `Run a GitHub Action with the specified inputs, while simulating the GitHub execution platform which translates certain stdout sequences into outputs and UI appearances.`,
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		actionName := args[0]
+		actionRef := args[0]
 		inputsFileName := args[1]
-		action.Run(actionName, parseStepInputs(inputsFileName))
+		action.Run(actionRef, parseStepInputs(inputsFileName))
 	},
 }
 

@@ -17,9 +17,12 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
+	"github.com/aengelberg/gh-actions-orb/action"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
@@ -30,16 +33,45 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gh-actions-orb",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "Run a GitHub Action in an orb",
+	Long:  `Run a GitHub Action with the specified inputs, while simulating the GitHub execution platform which translates certain stdout sequences into outputs and UI appearances.`,
+	Args:  cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		actionName := args[0]
+		inputsFileName := args[1]
+		action.Run(actionName, parseStepInputs(inputsFileName))
+	},
+}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+// Takes the name of a YAML file, then parses it into a map of step inputs
+// to pass to the GH Action.
+func parseStepInputs(inputsFileName string) action.StepInputs {
+	in, err := os.Open(inputsFileName)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer in.Close()
+	bytes, err := ioutil.ReadAll(in)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	var yamlData map[string]interface{}
+	if err := yaml.Unmarshal(bytes, &yamlData); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	stepInputs := make(map[string]string)
+	for k, v := range yamlData {
+		if s, ok := v.(string); ok {
+			stepInputs[k] = s
+		} else {
+			fmt.Printf("Found %t in `with` value; expected string", v)
+			os.Exit(1)
+		}
+	}
+	return stepInputs
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -57,7 +89,6 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gh-actions-orb.yaml)")
 
 	// Cobra also supports local flags, which will only run

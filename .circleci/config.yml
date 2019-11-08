@@ -8,11 +8,13 @@ commands:
       with:
         type: string
     steps:
-      - run: |
-          cat \<<EOF  > with.yml
-          << parameters.with >>
-          EOF
-      - run: ./gh-actions-orb << parameters.uses >> with.yml
+      - run:
+          name: << parameters.uses >>
+          command: |
+            cat \<<EOF  > with.yml
+            << parameters.with >>
+            EOF
+            ./gh-actions-orb << parameters.uses >> with.yml
 
 jobs:
   build:

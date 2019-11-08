@@ -17,7 +17,7 @@ commands:
 jobs:
   build:
     docker:
-      - image: go:1.13
+      - image: circleci/golang:1.13
     steps:
       - checkout
       - run: go build

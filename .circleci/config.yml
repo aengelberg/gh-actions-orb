@@ -1,16 +1,45 @@
 version: 2.1
 
+commands:
+  gh-action:
+    parameters:
+      uses:
+        type: string
+      with:
+        type: string
+    steps:
+      - run: |
+          cat \<<EOF
+          << parameters.with >>
+          EOF > with.yml
+      - run: ./gh-actions-orb << parameters.uses >> with.yml
+
 jobs:
+  build:
+    docker:
+      - image: go:1.13
+    steps:
+      - checkout
+      - run: go build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - gh-actions-orb
   run-hello-world:
     machine:
       image: ubuntu-1604:201903-01
     steps:
-      - checkout
-      - run: git clone https://github.com/actions/hello-world-docker-action
-      - run: docker build -t step-image hello-world-docker-action
-      - run: docker run step-image Alex
+      - attach_workspace:
+          at: .
+      - gh-action:
+          uses: actions/hello-world-docker-action@v1
+          with: |
+            who-to-greet: 'Mona The Octocat'
 
 workflows:
   test:
     jobs:
-      - run-hello-world
+      - build
+      - run-hello-world:
+          requires:
+            - build

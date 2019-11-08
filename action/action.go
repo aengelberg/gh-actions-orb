@@ -28,7 +28,10 @@ func cloneRepo(actionRef string, dir string) {
 	}
 	repoName := strs[0]
 	tag := strs[1]
-	err := exec.Command("git", "clone", "https://github.com/"+repoName, dir, "--branch", tag, "--depth", "1").Run()
+	cmd := exec.Command("git", "clone", "https://github.com/"+repoName, dir, "--branch", tag, "--depth", "1")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

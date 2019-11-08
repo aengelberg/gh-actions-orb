@@ -39,7 +39,10 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		actionRef := args[0]
 		inputsFileName := args[1]
-		action.Run(actionRef, parseStepInputs(inputsFileName))
+		if err := action.Run(actionRef, parseStepInputs(inputsFileName)); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 

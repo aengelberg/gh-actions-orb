@@ -60,19 +60,10 @@ func parseStepInputs(inputsFileName string) action.StepInputs {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	var yamlData map[string]interface{}
-	if err := yaml.Unmarshal(bytes, &yamlData); err != nil {
+	var stepInputs action.StepInputs
+	if err := yaml.Unmarshal(bytes, &stepInputs); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-	}
-	stepInputs := make(map[string]string)
-	for k, v := range yamlData {
-		if s, ok := v.(string); ok {
-			stepInputs[k] = s
-		} else {
-			fmt.Printf("Found %t in `with` value; expected string", v)
-			os.Exit(1)
-		}
 	}
 	return stepInputs
 }

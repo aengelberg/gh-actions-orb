@@ -9,9 +9,9 @@ commands:
         type: string
     steps:
       - run: |
-          cat \<<EOF
+          cat \<<EOF  > with.yml
           << parameters.with >>
-          EOF > with.yml
+          EOF
       - run: ./gh-actions-orb << parameters.uses >> with.yml
 
 jobs:

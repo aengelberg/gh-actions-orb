@@ -12,16 +12,19 @@ commands:
           name: << parameters.uses >>
           command: |
             # Download lights-camera-action binary
-            dir=/tmp/gh-actions-orb/v0.0.3
-            mkdir -p $dir
-            if [[ -f $dir/lights-camera-action ]]; then
+            lca_dir=/tmp/gh-actions-orb/v0.0.3
+            lca=$lca_dir/lights-camera-action
+            mkdir -p $lca_dir
+            if [[ -f $lca ]]; then
               echo "lights-camera-action already exists"
             elif uname -a | grep Linux | grep x86_64 > /dev/null 2>&1 ; then
-              export PATH=$PATH:$dir
-              curl -q -L -o $dir/lights-camera-action https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-linux-amd64
+              export PATH=$PATH:$lca_dir
+              curl -q -L -o $lca https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-linux-amd64
+              chmod 755 $lca
             elif uname -a | grep Darwin > /dev/null 2>&1; then
-              export PATH=$PATH:$dir
-              curl -q -L -o $dir/lights-camera-action https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-darwin-amd64
+              export PATH=$PATH:$lca_dir
+              curl -q -L -o $lca https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-darwin-amd64
+              chmod 755 $lca
             fi
             # Create a YAML file of parameters
             cat \<<EOF  > with.yml

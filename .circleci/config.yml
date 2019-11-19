@@ -1,49 +1,90 @@
 version: 2.1
 
-commands:
-  action:
-    parameters:
-      uses:
-        type: string
-      with:
-        type: string
-    steps:
-      - run:
-          name: << parameters.uses >>
-          command: |
-            # Download lights-camera-action binary
-            lca_dir=/tmp/gh-actions-orb/v0.0.3
-            lca=$lca_dir/lights-camera-action
-            mkdir -p $lca_dir
-            if [[ -f $lca ]]; then
-              echo "lights-camera-action already exists"
-            elif uname -a | grep Linux | grep x86_64 > /dev/null 2>&1 ; then
-              export PATH=$PATH:$lca_dir
-              curl -q -L -o $lca https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-linux-amd64
-              chmod 755 $lca
-            elif uname -a | grep Darwin > /dev/null 2>&1; then
-              export PATH=$PATH:$lca_dir
-              curl -q -L -o $lca https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-darwin-amd64
-              chmod 755 $lca
-            fi
-            # Create a YAML file of parameters
-            cat \<<EOF  > with.yml
-            << parameters.with >>
-            EOF
-            # Run the action
-            lights-camera-action << parameters.uses >> with.yml
+orbs:
+  orb-tools: circleci/orb-tools@8.27.4
+  cli: circleci/circleci-cli@0.1.5
+  gh:
+    commands:
+      action:
+        parameters:
+          uses:
+            type: string
+          with:
+            type: string
+        steps:
+          - run:
+              name: << parameters.uses >>
+              command: |
+                # Download lights-camera-action binary
+                lca_dir=/tmp/gh-actions-orb/v0.0.3
+                lca=$lca_dir/lights-camera-action
+                mkdir -p $lca_dir
+                if [[ -f $lca ]]; then
+                  echo "lights-camera-action already exists"
+                elif uname -a | grep Linux | grep x86_64 > /dev/null 2>&1 ; then
+                  export PATH=$PATH:$lca_dir
+                  curl -q -L -o $lca https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-linux-amd64
+                  chmod 755 $lca
+                elif uname -a | grep Darwin > /dev/null 2>&1; then
+                  export PATH=$PATH:$lca_dir
+                  curl -q -L -o $lca https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-darwin-amd64
+                  chmod 755 $lca
+                fi
+                # Create a YAML file of parameters
+                cat \<<EOF  > with.yml
+                << parameters.with >>
+                EOF
+                # Run the action
+                lights-camera-action << parameters.uses >> with.yml
 
 jobs:
-  run-hello-world:
+  test:
     machine:
       image: ubuntu-1604:201903-01
     steps:
-      - action:
+      - gh/action:
           uses: actions/hello-world-docker-action@v1
           with: |
             who-to-greet: 'Mona The Octocat'
+  build-and-validate:
+    docker:
+      - image: circleci/ruby:2.4
+    steps:
+      - checkout
+      - orb-tools/extract-inline-orb:
+          file: orb.yml
+          orb: gh
+          source: .circleci/config.yml
+      - cli/install
+      - orb-tools/validate
 
 workflows:
-  test:
+  build:
     jobs:
-      - run-hello-world
+      - test
+      - build-and-validate
+      - orb-tools/publish-dev:
+          orb-name: aengelberg/gh-actions
+          publish-alpha-version: false
+          publish-sha-version: true
+          requires:
+            - test
+            - build-and-validate
+      - approval:
+          type: approval
+          requires:
+            - build-and-validate
+            - orb-tools/publish-dev
+          filters:
+            branches:
+              only:
+                - master
+      - orb-tools/dev-promote-prod:
+          orb-name: aengelberg/gh-actions
+          publish-version-tag: false
+          requires:
+            - approval
+          filters:
+            branches:
+              only:
+                - master

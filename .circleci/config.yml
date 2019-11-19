@@ -1,7 +1,7 @@
 version: 2.1
 
 commands:
-  gh-action:
+  action:
     parameters:
       uses:
         type: string
@@ -11,29 +11,31 @@ commands:
       - run:
           name: << parameters.uses >>
           command: |
+            # Download lights-camera-action binary
+            dir=/tmp/gh-actions-orb/v0.0.3
+            mkdir -p $dir
+            if [[ -f $dir/lights-camera-action ]]; then
+              echo "lights-camera-action already exists"
+            elif uname -a | grep Linux | grep x86_64 > /dev/null 2>&1 ; then
+              export PATH=$PATH:$dir
+              curl -q -L -o $dir/lights-camera-action https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-linux-amd64
+            elif uname -a | grep Darwin > /dev/null 2>&1; then
+              export PATH=$PATH:$dir
+              curl -q -L -o $dir/lights-camera-action https://github.com/aengelberg/lights-camera-action/releases/download/v0.0.3/lights-camera-action-darwin-amd64
+            fi
+            # Create a YAML file of parameters
             cat \<<EOF  > with.yml
             << parameters.with >>
             EOF
-            ./gh-actions-orb << parameters.uses >> with.yml
+            # Run the action
+            lights-camera-action << parameters.uses >> with.yml
 
 jobs:
-  build:
-    docker:
-      - image: circleci/golang:1.13
-    steps:
-      - checkout
-      - run: go build
-      - persist_to_workspace:
-          root: .
-          paths:
-            - gh-actions-orb
   run-hello-world:
     machine:
       image: ubuntu-1604:201903-01
     steps:
-      - attach_workspace:
-          at: .
-      - gh-action:
+      - action:
           uses: actions/hello-world-docker-action@v1
           with: |
             who-to-greet: 'Mona The Octocat'
@@ -41,7 +43,4 @@ jobs:
 workflows:
   test:
     jobs:
-      - build
-      - run-hello-world:
-          requires:
-            - build
+      - run-hello-world

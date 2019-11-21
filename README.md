@@ -24,9 +24,3 @@ This is intentionally very similar to the syntax if you were to write it in a Gi
   with:
     who-to-greet: 'Mona The Octocat'
 ```
-
-## TODO
-
-* Implement nodejs Actions.
-* Implement non-Dockerfile-based Docker Actions.
-* Capture [logging commands](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/development-tools-for-github-actions#logging-commands) that appear in stdout and properly simulate the corresponding behavior.
